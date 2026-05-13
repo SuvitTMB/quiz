@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PK System Admin - Advanced Management</title>
+    <!-- Fonts: Kanit -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js and DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #fafaf9; color: #44403c; }
+        
+        @font-face {
+            font-family: 'Kanit';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+        }
+
+        :root {
+            --primary-color: #10b981; 
+            --neutral-mute: #aebad2;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+
+        .tab-active {
+            background-color: var(--primary-color);
+            color: white !important;
+            box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.4);
+        }
+
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        .modal-bg {
+            background: rgba(28, 25, 23, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .rounded-table-container { border-radius: 15px; overflow: hidden; border: 1px solid #e2e8f0; }
+        
+        th { 
+            font-size: 12px !important; 
+            font-weight: 700; 
+            color: #475569; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em; 
+            background-color: #e2e8f0; 
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        } 
+        td { font-size: 14px !important; color: #334155; padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; font-weight: 400 !important; }
+
+        select {
+            background-color: #f0f9ff !important;
+            color: #1e293b !important;
+            border-color: rgba(7, 89, 133, 0.3) !important;
+            border-width: 1px !important;
+            border-style: solid !important;
+            border-radius: 0.5rem !important;
+        }
+
+        .row-hover-orange:hover {
+            background-color: #fff7ed !important; 
+            cursor: pointer;
+        }
+
+        .row-hover-blue:hover {
+            background-color: #f0f9ff !important;
+            cursor: pointer;
+        }
+
+        .sortable-header { cursor: pointer; transition: background 0.2s; }
+        .sortable-header:hover { background-color: #cbd5e1; }
+
+        .modal-chart-card {
+            background: white;
+            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .skill-detail-card {
+            background-color: #fff5f5;
+            border: 1px solid #feb2b2;
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Filter Tag Styling based on image_2c9790.png and image_2bc91f.png */
+        .skill-filter-tag {
+            padding: 0.6rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .skill-filter-tag.active {
+            background-color: #2563eb;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            border-color: #1d4ed8;
+        }
+        .skill-filter-tag.inactive {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-color: #dbeafe;
+        }
+        .skill-filter-tag.inactive:hover {
+            background-color: #dbeafe;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-stone-100 border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-[#0056ff] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200">A</div>
+                    <div>
+                        <h1 class="font-bold text-stone-800 leading-tight text-lg">Admin Manager</h1>
+                        <p id="connection-status" class="text-[12px] text-slate-400 uppercase tracking-widest font-bold italic">Checking Connection...</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex space-x-1" id="main-nav">
+                    <a href="adminquiz-v1.html" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-stone-200 transition-all flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> แดชบอร์ด
+                    </a>
+                    <a href="adminquiz-v2.html" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-stone-200 transition-all flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> หมวดคำถาม
+                    </a>
+                    <a href="adminquiz-v3.html" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-stone-200 transition-all flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> ผลสอบ
+                    </a>
+                    <a href="#" onclick="navigate('results')" id="nav-results" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-stone-200 transition-all flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> ผล คปภ.
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <!-- Section: Tracking -->
+        <section id="section-tracking" class="content-section fade-in space-y-6">
+            <div class="flex flex-col gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-800">ติดตามผลการสอบและติว</h2>
+                    <p class="text-stone-500 text-sm">เปรียบเทียบความก้าวหน้าโดยดึงข้อมูลจากประวัติการติวและการสอบจริง</p>
+                </div>
+                
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="w-full md:w-auto">
+                        <select id="tracking-set-select" onchange="window.updateTrackingUI()" class="w-full md:w-[350px] border rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                            <option value="">เลือกชุดคำถาม...</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-[350px] relative">
+                        <input type="text" id="tracking-search-input" oninput="window.handleTrackingSearch()" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." class="w-full pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all">
+                        <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-table-container shadow-sm overflow-hidden text-base border border-stone-200">
+                <table class="w-full text-left" id="table-tracking-main">
+                    <thead>
+                        <tr class="bg-stone-100">
+                            <th class="px-4 py-3 text-center w-16">#</th>
+                            <th class="px-4 py-3 sortable-header" onclick="window.handleTrackingSort('empId')">รหัส <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 sortable-header" onclick="window.handleTrackingSort('name')">ชื่อ-นามสกุล <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center sortable-header" onclick="window.handleTrackingSort('testScore')">ผลการทดสอบ <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center sortable-header" onclick="window.handleTrackingSort('testAccuracy')">%ตอบถูก <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center sortable-header" onclick="window.handleTrackingSort('isPassed')">ผลประเมิน <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center sortable-header" onclick="window.handleTrackingSort('trainScore')">ข้อที่ติว <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center sortable-header" onclick="window.handleTrackingSort('trainAccuracy')">%ติวถูก <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center">ผลสอบ/ติว</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-tracking-body" class="divide-y divide-stone-100 text-sm">
+                        <tr><td colspan="9" class="p-12 text-center text-stone-400 italic">กรุณาเลือกชุดแบบทดสอบเพื่อดูข้อมูล</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tracking-pagination" class="flex flex-col md:flex-row items-center justify-between bg-white px-4 py-3 border border-stone-200 rounded-15 shadow-sm gap-4">
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="text-[12px] text-stone-500 font-medium" id="tracking-page-info">แสดงรายการที่ 0-0 จาก 0 รายการ</div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-stone-400 font-bold uppercase">แสดง:</span>
+                        <select onchange="window.handleTrackingPerPageChange(this.value)" class="text-[11px] font-bold py-1 px-2 rounded-lg outline-none border-stone-200">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="window.handleDownloadTrackingExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-1.5 rounded-xl text-[12px] font-bold shadow transition-all flex items-center gap-2">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Download Excel
+                    </button>
+                    
+                    <div class="flex items-center gap-2 border-l pl-3 border-stone-200">
+                        <button onclick="changeTrackingPage(-1)" id="tracking-prev-btn" class="p-2 border rounded-lg hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-4 h-4 text-stone-600"></i></button>
+                        <div id="tracking-pages-container" class="flex gap-1"></div>
+                        <button onclick="changeTrackingPage(1)" id="tracking-next-btn" class="p-2 border rounded-lg hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-4 h-4 text-stone-600"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Summary Set -->
+        <section id="section-summaryset" class="content-section hidden fade-in space-y-6">
+            <div class="flex flex-col gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-800">สรุปชุดคำถาม</h2>
+                    <p class="text-stone-500 text-sm">ข้อมูลภาพรวมการใช้งานชุดคำถามทั้งหมดในระบบ</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-table-container shadow-sm overflow-hidden text-base border border-stone-200">
+                <table class="w-full text-left" id="table-summaryset-main">
+                    <thead>
+                        <tr class="bg-stone-100">
+                            <th class="px-4 py-3 text-center w-16">ลำดับ</th>
+                            <th class="px-4 py-3">ชื่อชุดทดสอบ</th>
+                            <th class="px-4 py-3 text-center">สถานะ</th>
+                            <th class="px-4 py-3 text-center">จำนวนข้อสอบ</th>
+                            <th class="px-4 py-3 text-center">ผู้ทดสอบ</th>
+                            <th class="px-4 py-3 text-center text-emerald-600">ตอบถูก</th>
+                            <th class="px-4 py-3 text-center text-red-600">ตอบผิด</th>
+                            <th class="px-4 py-3 text-center">รวมข้อ</th>
+                            <th class="px-4 py-3 text-center">ผ่านเกณฑ์</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-summaryset-body" class="divide-y divide-stone-100 text-sm">
+                        <tr><td colspan="9" class="p-12 text-center text-stone-400 italic">กำลังประมวลผลข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section: Results -->
+        <section id="section-results" class="content-section hidden fade-in space-y-6">
+            <div class="flex flex-col gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-800">สรุปผลการสอบรายทักษะ</h2>
+                    <p class="text-stone-500 text-sm">วิเคราะห์คะแนนสอบแยกตามทักษะและเกณฑ์การผ่านของพนักงาน</p>
+                </div>
+                
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="w-full md:w-auto">
+                        <select id="results-set-select" onchange="window.updateResultsUI()" class="w-full md:w-[350px] border rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                            <option value="">เลือกชุดคำถาม...</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-[350px] relative">
+                        <input type="text" id="results-search-input" oninput="window.handleResultsSearch()" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." class="w-full pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all">
+                        <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-8 gap-4">
+                <div class="bg-orange-100 p-4 rounded-2xl border border-orange-200 text-center shadow-sm">
+                    <p class="text-[10px] text-orange-700 font-bold uppercase mb-1">%การผ่านเกณฑ์</p>
+                    <h4 id="res-stat-pass-rate" class="text-xl font-bold text-orange-800">0%</h4>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-center shadow-sm">
+                    <p class="text-[10px] text-blue-600 font-bold uppercase mb-1">จำนวนผู้ทดสอบ</p>
+                    <h4 id="res-stat-users" class="text-xl font-bold text-blue-700">0</h4>
+                </div>
+                <div class="bg-slate-100 p-4 rounded-2xl border border-slate-200 text-center shadow-sm">
+                    <p class="text-[10px] text-slate-600 font-bold uppercase mb-1">ผู้ไม่ได้ทดสอบ</p>
+                    <h4 id="res-stat-not-tested" class="text-xl font-bold text-slate-700">0</h4>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
+                    <p class="text-[10px] text-emerald-600 font-bold uppercase mb-1">จำนวนคำถาม</p>
+                    <h4 id="res-stat-questions" class="text-xl font-bold text-emerald-700">0</h4>
+                </div>
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 text-center shadow-sm">
+                    <p class="text-[10px] text-indigo-600 font-bold uppercase mb-1">ข้อที่ทดสอบ</p>
+                    <h4 id="res-stat-attempts" class="text-xl font-bold text-indigo-700">0</h4>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-2xl border border-purple-100 text-center shadow-sm">
+                    <p class="text-[10px] text-purple-600 font-bold uppercase mb-1">จำนวนตอบถูก</p>
+                    <h4 id="res-stat-correct" class="text-xl font-bold text-purple-700">0</h4>
+                </div>
+                <div class="bg-rose-50 p-4 rounded-2xl border border-rose-100 text-center shadow-sm">
+                    <p class="text-[10px] text-rose-600 font-bold uppercase mb-1">จำนวนตอบผิด</p>
+                    <h4 id="res-stat-wrong" class="text-xl font-bold text-rose-700">0</h4>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center shadow-sm">
+                    <p class="text-[10px] text-orange-600 font-bold uppercase mb-1">%การตอบถูก</p>
+                    <h4 id="res-stat-acc" class="text-xl font-bold text-orange-700">0%</h4>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-table-container shadow-sm overflow-x-auto border border-stone-200">
+                <table class="w-full text-left border-collapse" id="table-results-main">
+                    <thead id="table-results-head"></thead>
+                    <tbody id="table-results-body" class="divide-y divide-stone-100 text-sm">
+                        <tr><td colspan="3" class="p-12 text-center text-stone-400 italic">กรุณาเลือกชุดแบบทดสอบเพื่อดูข้อมูล</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="results-pagination" class="flex flex-col md:flex-row items-center justify-between bg-white px-4 py-3 border border-stone-200 rounded-15 shadow-sm gap-4">
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="text-[12px] text-stone-500 font-medium" id="results-page-info">แสดงรายการที่ 0-0 จาก 0 รายการ</div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-stone-400 font-bold uppercase">แสดง:</span>
+                        <select onchange="window.handleResultsPerPageChange(this.value)" class="text-[11px] font-bold py-1 px-2 rounded-lg outline-none border-stone-200">
+                            <option value="30" selected>30</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="window.handleDownloadResultsExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-1.5 rounded-xl text-[12px] font-bold shadow transition-all flex items-center gap-2">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Download Excel
+                    </button>
+                    
+                    <div class="flex items-center gap-2 border-l pl-3 border-stone-200">
+                        <button onclick="changeResultsPage(-1)" id="results-prev-btn" class="p-2 border rounded-lg hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-4 h-4 text-stone-600"></i></button>
+                        <div id="results-pages-container" class="flex gap-1"></div>
+                        <button onclick="changeResultsPage(1)" id="results-next-btn" class="p-2 border rounded-lg hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-4 h-4 text-stone-600"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Individual -->
+        <section id="section-individual" class="content-section hidden fade-in space-y-6">
+            <div class="flex flex-col gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-stone-800">สรุปผลการทดสอบรายบุคคล</h2>
+                    <p class="text-stone-500 text-sm">ดูภาพรวมความก้าวหน้าและการผ่านเกณฑ์ของพนักงานแต่ละท่านจากทุกชุดแบบทดสอบ</p>
+                </div>
+                
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-2 w-full md:w-auto">
+                         <div class="bg-stone-100 px-4 py-2 rounded-xl border border-stone-200 text-sm font-bold text-stone-600 flex items-center gap-2">
+                             <i data-lucide="users" class="w-4 h-4"></i> พนักงานทั้งหมด: <span id="individual-total-count" class="text-[#0056ff]">0</span> ท่าน
+                         </div>
+                    </div>
+                    <div class="w-full md:w-[350px] relative">
+                        <input type="text" id="individual-search-input" oninput="window.handleIndividualSearch()" placeholder="ค้นหารหัส หรือ ชื่อพนักงาน..." class="w-full pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all">
+                        <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-table-container shadow-sm overflow-hidden text-base border border-stone-200">
+                <table class="w-full text-left" id="table-individual-main">
+                    <thead>
+                        <tr class="bg-stone-100">
+                            <th class="px-4 py-3 text-center w-16">ลำดับ</th>
+                            <th class="px-4 py-3 sortable-header" onclick="window.handleIndividualSort('empId')">รหัส <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 sortable-header" onclick="window.handleIndividualSort('name')">ชื่อ-นามสกุล <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center sortable-header" onclick="window.handleIndividualSort('totalSets')">จำนวนชุดทดสอบ <i data-lucide="arrow-up-down" class="w-3 h-3 text-stone-400 inline ml-1"></i></th>
+                            <th class="px-4 py-3 text-center text-emerald-600">ตอบถูก</th>
+                            <th class="px-4 py-3 text-center text-red-600">ตอบผิด</th>
+                            <th class="px-4 py-3 text-center">%ตอบถูก</th>
+                            <th class="px-4 py-3 text-center">ประเมิน</th>
+                            <th class="px-4 py-3 text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-individual-body" class="divide-y divide-stone-100 text-sm">
+                        <tr><td colspan="9" class="p-12 text-center text-stone-400 italic">กำลังประมวลผลข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="individual-pagination" class="flex flex-col md:flex-row items-center justify-between bg-white px-4 py-3 border border-stone-200 rounded-15 shadow-sm gap-4">
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="text-[12px] text-stone-500 font-medium" id="individual-page-info">แสดงรายการที่ 0-0 จาก 0 รายการ</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="window.handleDownloadIndividualExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-1.5 rounded-xl text-[12px] font-bold shadow transition-all flex items-center gap-2">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Download Excel
+                    </button>
+                    <div class="flex items-center gap-2 border-l pl-3 border-stone-200">
+                        <button onclick="changeIndividualPage(-1)" id="individual-prev-btn" class="p-2 border rounded-lg hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="chevron-left" class="w-4 h-4 text-stone-600"></i></button>
+                        <div id="individual-pages-container" class="flex gap-1"></div>
+                        <button onclick="changeIndividualPage(1)" id="individual-next-btn" class="p-2 border rounded-lg hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="chevron-right" class="w-4 h-4 text-stone-600"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- LIGHTBOX: Summary Results Individual Detail -->
+    <div id="results-individual-modal" class="fixed inset-0 z-[100] hidden modal-bg flex items-center justify-center p-4">
+        <div class="bg-white w-[95%] h-[95vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                        <i data-lucide="clipboard-check" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-results-full-title" class="text-xl font-bold text-stone-800 leading-none">สรุปผลการสอบรายทักษะ : -</h3>
+                        <p class="text-sm text-stone-400 font-medium mt-1 uppercase tracking-wider italic">รายละเอียดผลการสอบและคะแนนรายทักษะรายบุคคล</p>
+                    </div>
+                </div>
+                <button onclick="window.closeResultsDetail()" class="p-2 hover:bg-stone-200 rounded-full transition-all">
+                    <i data-lucide="x" class="w-6 h-6 text-stone-500"></i>
+                </button>
+            </div>
+            <div id="modal-results-content" class="flex-1 overflow-y-auto p-6 no-scrollbar">
+                <div class="flex flex-col items-center justify-center h-full text-stone-400 italic">
+                    <i data-lucide="activity" class="w-12 h-12 mb-4 opacity-20"></i>
+                    <p>กำลังเตรียมข้อมูลรายละเอียด...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX: Summary Set Question Detail Modal -->
+    <div id="summaryset-detail-modal" class="fixed inset-0 z-[100] hidden modal-bg flex items-center justify-center p-4">
+        <div class="bg-white w-[95%] max-w-[1500px] max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                        <i data-lucide="help-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-summary-set-title" class="text-xl font-bold text-stone-800 leading-none">-</h3>
+                        <p class="text-sm text-stone-400 font-medium mt-1 uppercase tracking-wider italic">ข้อมูลสรุปและรายละเอียดชุดคำถาม</p>
+                    </div>
+                </div>
+                <button onclick="window.closeSummarySetDetail()" class="p-2 hover:bg-stone-200 rounded-full transition-all">
+                    <i data-lucide="x" class="w-6 h-6 text-stone-500"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 no-scrollbar space-y-8">
+                <!-- Overview Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-7 gap-4">
+                    <div class="bg-orange-100 p-4 rounded-2xl border border-orange-200 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p class="text-[12px] text-orange-700 font-bold uppercase tracking-wider mb-2">% เกณฑ์การผ่าน</p>
+                        <h4 id="set-overview-pass-threshold" class="text-xl font-bold text-orange-800">0%</h4>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p class="text-[12px] text-blue-600 font-bold uppercase tracking-wider mb-2">จำนวนผู้ทดสอบ</p>
+                        <h4 id="set-overview-total-users" class="text-xl font-medium text-blue-700">0</h4>
+                    </div>
+                    <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p class="text-[12px] text-emerald-600 font-bold uppercase tracking-wider mb-2">จำนวนคำถาม</p>
+                        <h4 id="set-overview-total-q" class="text-xl font-medium text-emerald-700">0</h4>
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p class="text-[12px] text-indigo-600 font-bold uppercase tracking-wider mb-2">จำนวนข้อที่ทดสอบ</p>
+                        <h4 id="set-overview-total-attempt" class="text-xl font-medium text-indigo-700">0</h4>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-2xl border border-purple-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p class="text-[12px] text-purple-600 font-bold uppercase tracking-wider mb-2">จำนวนตอบถูก</p>
+                        <h4 id="set-overview-correct" class="text-xl font-medium text-purple-700">0</h4>
+                    </div>
+                    <div class="bg-rose-50 p-4 rounded-2xl border border-rose-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p class="text-[12px] text-rose-600 font-bold uppercase tracking-wider mb-2">จำนวนตอบผิด</p>
+                        <h4 id="set-overview-wrong" class="text-xl font-medium text-rose-700">0</h4>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p class="text-[12px] text-orange-600 font-bold uppercase tracking-wider mb-2">%การตอบถูก</p>
+                        <h4 id="set-overview-avg-acc" class="text-xl font-medium text-orange-700">0%</h4>
+                    </div>
+                </div>
+
+                <!-- Graphs Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm flex flex-col items-center">
+                        <p class="text-center text-[12px] font-bold text-stone-400 uppercase mb-4">Skill Spider Analysis</p>
+                        <div class="w-full aspect-square max-h-[200px]">
+                            <canvas id="set-global-radar"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm flex flex-col items-center">
+                        <p class="text-center text-[12px] font-bold text-stone-400 uppercase mb-4">Score vs Time Matrix</p>
+                        <div class="w-full h-[200px]">
+                            <canvas id="set-global-scatter"></canvas>
+                        </div>
+                        <p class="text-[10px] text-stone-400 italic mt-2">แกน X: เวลาเฉลี่ย (s) | แกน Y: คะแนน</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm flex flex-col items-center">
+                        <p class="text-center text-[12px] font-bold text-stone-400 uppercase mb-4">ผลการสอบผ่านเกณฑ์ (%)</p>
+                        <div class="w-full h-[200px]">
+                            <canvas id="set-global-bar"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions List Detail -->
+                <div class="space-y-4">
+                    <div class="flex flex-col gap-4">
+                        <h4 class="font-bold text-stone-700 flex items-center gap-2">
+                            <i data-lucide="list" class="w-5 h-5 text-blue-600"></i> รายละเอียดคำถามรายข้อ
+                        </h4>
+                        
+                        <!-- New Skill Summary Filter Row (image_2bc91f.png style) -->
+                        <div class="p-5 bg-white rounded-[2rem] border border-stone-100 shadow-sm space-y-4">
+                            <div class="text-[12px] font-bold text-stone-400 uppercase tracking-widest">ทักษะทั้งหมด:</div>
+                            <div id="modal-skill-filter-container" class="flex flex-wrap gap-3"></div>
+                        </div>
+
+                        <div id="modal-skill-boxes-container" class="grid grid-cols-1 md:grid-cols-5 gap-4"></div>
+                    </div>
+
+                    <div class="rounded-table-container bg-white border border-stone-200 overflow-x-auto shadow-sm">
+                        <table class="w-full text-left min-w-[1200px]">
+                            <thead class="sticky top-0 z-10" id="modal-summary-questions-head"></thead>
+                            <tbody id="modal-summary-questions-body" class="divide-y divide-stone-100 text-[13px]"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="flex justify-end mt-4">
+                        <button onclick="window.handleDownloadModalQuestionsExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-2">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Download File Excel (CSV)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, getDocs, writeBatch, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const manualFirebaseConfig = {
+            apiKey: "AIzaSyAciknEYhZU7AwOdfYytC1t_AnW2Ee11us",
+            authDomain: "faifah-ttb.firebaseapp.com",
+            projectId: "faifah-ttb",
+            storageBucket: "faifah-ttb.appspot.com",
+            messagingSenderId: "842980876200",
+            appId: "1:842980876200:web:f33bfad2ccbf263075079d"
+        };
+
+        const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : manualFirebaseConfig;
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const getPath = (colName) => {
+            const sandboxId = typeof __app_id !== 'undefined' ? __app_id : null;
+            if (sandboxId) return `artifacts/${sandboxId}/public/data/${colName}`;
+            return colName;
+        };
+
+        window.appState = {
+            members: [],
+            questionSets: [],
+            questions: [],
+            quizresults: [],
+            tutor: [],
+            spiderCategories: [],
+            user: null,
+            syncStarted: false,
+            trackingCurrentPage: 1,
+            trackingPerPage: 50,
+            trackingSortCol: 'empId',
+            trackingSortDir: 'asc',
+            trackingSearchQuery: '',
+            resultsCurrentPage: 1,
+            resultsPerPage: 30,
+            resultsSearchQuery: '',
+            resultsSortCol: 'empId',
+            resultsSortDir: 'asc',
+            individualCurrentPage: 1,
+            individualPerPage: 20,
+            individualSortCol: 'empId',
+            individualSortDir: 'asc',
+            individualSearchQuery: '',
+            currentModalSetId: null,
+            modalQuestionsSortCol: 'idx',
+            modalQuestionsSortDir: 'asc',
+            modalQuestionsSkillFilter: 'all',
+            // เพิ่มสถานะใหม่สำหรับ Lightbox รายบุคคล
+            indModalQuestionsSortCol: 'idx',
+            indModalQuestionsSortDir: 'asc',
+            indModalQuestionsSkillFilter: 'all',
+            currentIndEmpId: null,
+            currentIndName: null
+        };
+
+        window.getProcessedQuizSetData = () => {
+            return window.appState.questionSets.map(set => {
+                const results = window.appState.quizresults.filter(r => String(r.setId || r.quizId) === String(set.id));
+                const questions = window.appState.questions.filter(q => String(q.setId || q.quizId) === String(set.id));
+                
+                let correct = 0;
+                let totalAttempt = 0;
+                results.forEach(r => {
+                    correct += Number(r.score || 0);
+                    totalAttempt += Number(r.totalQuestions || r.total || 0);
+                });
+
+                const threshold = Number(set.passTest || 60);
+                const passedCount = results.filter(r => {
+                    const acc = Math.round((Number(r.score || 0) / Number(r.totalQuestions || r.total || 1)) * 100);
+                    return acc >= threshold;
+                }).length;
+
+                return {
+                    id: set.id,
+                    title: set.title,
+                    status: set.status || 'Active',
+                    totalQuestions: questions.length,
+                    examineeCount: [...new Set(results.map(r => String(r.memberId || r.userId)))].length,
+                    correctCount: correct,
+                    wrongCount: totalAttempt - correct,
+                    totalAttemptedQ: totalAttempt,
+                    passRate: results.length > 0 ? Math.round((passedCount / results.length) * 100) : 0
+                };
+            });
+        };
+
+        // ฟังก์ชันประมวลผลข้อมูลรายบุคคล
+        window.getProcessedIndividualData = () => {
+            const memberResults = new Map();
+            
+            window.appState.quizresults.forEach(r => {
+                const mId = String(r.memberId || r.userId);
+                if (!memberResults.has(mId)) {
+                    const member = window.appState.members.find(m => String(m.empId) === mId);
+                    memberResults.set(mId, {
+                        empId: mId,
+                        name: member ? member.name : (r.memberName || "ไม่พบชื่อ"),
+                        results: []
+                    });
+                }
+                memberResults.get(mId).results.push(r);
+            });
+
+            let data = Array.from(memberResults.values()).map(item => {
+                let totalCorrect = 0;
+                let totalQ = 0;
+                let passedSets = 0;
+                const uniqueSets = new Set();
+
+                item.results.forEach(r => {
+                    totalCorrect += Number(r.score || 0);
+                    totalQ += Number(r.totalQuestions || r.total || 0);
+                    uniqueSets.add(r.setId || r.quizId);
+                    
+                    const set = window.appState.questionSets.find(s => s.id === (r.setId || r.quizId));
+                    const threshold = set ? Number(set.passTest || 60) : 60;
+                    const acc = Math.round((Number(r.score || 0) / Number(r.totalQuestions || r.total || 1)) * 100);
+                    if (acc >= threshold) passedSets++;
+                });
+
+                return {
+                    empId: item.empId,
+                    name: item.name,
+                    totalSets: uniqueSets.size,
+                    correct: totalCorrect,
+                    wrong: totalQ - totalCorrect,
+                    totalQ: totalQ,
+                    accuracy: totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0,
+                    passedSets: passedSets
+                };
+            });
+
+            if (window.appState.individualSearchQuery) {
+                const q = window.appState.individualSearchQuery.toLowerCase();
+                data = data.filter(d => d.empId.toLowerCase().includes(q) || d.name.toLowerCase().includes(q));
+            }
+
+            return data;
+        };
+
+
+        window.updateSummarySetUI = () => {
+            const tbody = document.getElementById('table-summaryset-body');
+            if (!tbody) return;
+            const data = window.getProcessedQuizSetData();
+            tbody.innerHTML = data.map((row, i) => `
+                <tr class="row-hover-orange transition-all" onclick="window.openSummarySetDetail('${row.id}')">
+                    <td class="px-4 py-3 text-center text-stone-400">${i + 1}</td>
+                    <td class="px-4 py-3 font-bold text-stone-700">${row.title}</td>
+                    <td class="px-4 py-3 text-center"><span class="px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-bold">${row.status}</span></td>
+                    <td class="px-4 py-3 text-center">${row.totalQuestions}</td>
+                    <td class="px-4 py-3 text-center text-blue-600 font-bold">${row.examineeCount}</td>
+                    <td class="px-4 py-3 text-center text-emerald-600">${row.correctCount}</td>
+                    <td class="px-4 py-3 text-center text-red-500">${row.wrongCount}</td>
+                    <td class="px-4 py-3 text-center text-stone-500">${row.totalAttemptedQ}</td>
+                    <td class="px-4 py-3 text-center font-bold text-orange-600">${row.passRate}%</td>
+                </tr>
+            `).join('');
+        };
+
+        window.openSummarySetDetail = (setId) => {
+            const set = window.appState.questionSets.find(s => String(s.id) === String(setId));
+            if (!set) return;
+            
+            window.appState.currentModalSetId = setId;
+            const data = window.getProcessedQuizSetData().find(d => String(d.id) === String(setId));
+            
+            document.getElementById('modal-summary-set-title').innerText = set.title;
+            document.getElementById('set-overview-pass-threshold').innerText = (set.passTest || 60) + '%';
+            document.getElementById('set-overview-total-users').innerText = data.examineeCount;
+            document.getElementById('set-overview-total-q').innerText = data.totalQuestions;
+            document.getElementById('set-overview-total-attempt').innerText = data.totalAttemptedQ;
+            document.getElementById('set-overview-correct').innerText = data.correctCount;
+            document.getElementById('set-overview-wrong').innerText = data.wrongCount;
+            document.getElementById('set-overview-avg-acc').innerText = (data.totalAttemptedQ > 0 ? Math.round((data.correctCount/data.totalAttemptedQ)*100) : 0) + '%';
+
+            renderSummarySetCharts(setId);
+            renderModalQuestionsTable();
+
+            document.getElementById('summaryset-detail-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        const renderSummarySetCharts = (setId) => {
+            const setResults = window.appState.quizresults.filter(r => r.setId === setId || r.quizId === setId);
+            const setQuestions = window.appState.questions.filter(q => q.setId === setId || q.quizId === setId);
+
+            // 1. Radar Chart (Skills Analysis)
+            const skillMap = {};
+            setQuestions.forEach(q => {
+                const cat = window.appState.spiderCategories.find(c => c.id === q.spiderCatId);
+                const skillName = cat ? cat.name : 'ทั่วไป';
+                if (!skillMap[skillName]) skillMap[skillName] = { correct: 0, total: 0 };
+                
+                setResults.forEach(res => {
+                    const details = Array.isArray(res.details) ? res.details : Object.values(res.details || {});
+                    const qDetail = details.find(d => d.questionId === q.id);
+                    if (qDetail) {
+                        skillMap[skillName].total++;
+                        if (qDetail.isCorrect) skillMap[skillName].correct++;
+                    }
+                });
+            });
+
+            const radarLabels = Object.keys(skillMap);
+            const radarData = radarLabels.map(l => skillMap[l].total > 0 ? Math.round((skillMap[l].correct/skillMap[l].total)*100) : 0);
+
+            if (window.setGlobalRadar) window.setGlobalRadar.destroy();
+            const radarCtx = document.getElementById('set-global-radar');
+            if (radarCtx) {
+                window.setGlobalRadar = new Chart(radarCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: radarLabels.length > 0 ? radarLabels : ['ไม่มีข้อมูล'],
+                        datasets: [{ label: 'Skill Accuracy (%)', data: radarData.length > 0 ? radarData : [0], backgroundColor: 'rgba(249, 115, 22, 0.2)', borderColor: '#f97316', pointBackgroundColor: '#f97316' }]
+                    },
+                    options: { scales: { r: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+                });
+            }
+
+            // 2. Scatter Chart (Score vs Time Matrix)
+            const scatterData = setResults.map(r => ({
+                x: r.usedTime || 0,
+                y: Math.round((Number(r.score || 0) / Number(r.totalQuestions || r.total || 1)) * 100)
+            }));
+
+            if (window.setGlobalScatter) window.setGlobalScatter.destroy();
+            const scatterCtx = document.getElementById('set-global-scatter');
+            if (scatterCtx) {
+                window.setGlobalScatter = new Chart(scatterCtx, {
+                    type: 'scatter',
+                    data: { datasets: [{ label: 'พนักงาน', data: scatterData, backgroundColor: '#0056ff' }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'เวลาเฉลี่ย (วินาที)' } }, y: { beginAtZero: true, max: 100, title: { display: true, text: 'คะแนน (%)' } } } }
+                });
+            }
+
+            // 3. Doughnut Chart (Pass/Fail Rate)
+            const set = window.appState.questionSets.find(s => s.id === setId);
+            const threshold = set ? (set.passTest || 60) : 60;
+            const passed = setResults.filter(r => Math.round((Number(r.score || 0) / Number(r.totalQuestions || r.total || 1)) * 100) >= threshold).length;
+            const failed = setResults.length - passed;
+
+            if (window.setGlobalBar) window.setGlobalBar.destroy();
+            const barCtx = document.getElementById('set-global-bar');
+            if (barCtx) {
+                window.setGlobalBar = new Chart(barCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['ผ่านเกณฑ์', 'ไม่ผ่านเกณฑ์'],
+                        datasets: [{ data: [passed, failed], backgroundColor: ['#10b981', '#f43f5e'] }]
+                    },
+                    options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+        };
+
+        window.renderModalQuestionsTable = () => {
+            const setId = window.appState.currentModalSetId;
+            const thead = document.getElementById('modal-summary-questions-head');
+            const tbody = document.getElementById('modal-summary-questions-body');
+            const skillFilterContainer = document.getElementById('modal-skill-filter-container');
+            const skillBoxesContainer = document.getElementById('modal-skill-boxes-container');
+            if (!tbody || !setId || !thead) return;
+
+            const setQuestions = window.appState.questions.filter(q => q.setId === setId || q.quizId === setId);
+            const setResults = window.appState.quizresults.filter(r => r.setId === setId || r.quizId === setId);
+
+            // ประมวลผลข้อมูล
+            let allProcessedData = setQuestions.map((q, idx) => {
+                let correct = 0, total = 0;
+                const choiceFreq = [0, 0, 0, 0];
+                setResults.forEach(res => {
+                    const details = Array.isArray(res.details) ? res.details : Object.values(res.details || {});
+                    const d = details.find(det => String(det.questionId) === String(q.id));
+                    if (d) {
+                        total++;
+                        if (d.isCorrect) correct++;
+                        if (typeof d.originalOptionIndex === 'number' && d.originalOptionIndex >= 0 && d.originalOptionIndex <= 3) {
+                            choiceFreq[d.originalOptionIndex]++;
+                        }
+                    }
+                });
+                const cat = window.appState.spiderCategories.find(c => c.id === q.spiderCatId);
+                return {
+                    ...q,
+                    idx: idx + 1,
+                    skillName: cat ? cat.name : 'ทั่วไป',
+                    correctCount: correct,
+                    wrongCount: total - correct,
+                    totalAttemptCount: total,
+                    accuracy: total > 0 ? Math.round((correct/total)*100) : 0,
+                    choiceFreq: choiceFreq
+                };
+            });
+
+            // 1. Skill Boxes (Top Summaries)
+            const skillStats = {};
+            allProcessedData.forEach(q => {
+                if (!skillStats[q.skillName]) skillStats[q.skillName] = { correct: 0, total: 0 };
+                skillStats[q.skillName].correct += q.correctCount;
+                skillStats[q.skillName].total += q.totalAttemptCount;
+            });
+
+            if (skillBoxesContainer) {
+                skillBoxesContainer.innerHTML = Object.keys(skillStats).map(sName => {
+                    const acc = skillStats[sName].total > 0 ? Math.round((skillStats[sName].correct/skillStats[sName].total)*100) : 0;
+                    return `
+                        <div class="bg-white p-3 rounded-2xl border border-stone-100 shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold text-stone-400 uppercase">${sName}</span>
+                                <span class="text-xs font-bold text-orange-600">${acc}%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-orange-500 rounded-full" style="width: ${acc}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 2. Skill Filter Buttons Row (image_2c9790.png / image_2bc91f.png style)
+            const uniqueSkills = [...new Set(allProcessedData.map(q => q.skillName))];
+            if (skillFilterContainer) {
+                const allCount = allProcessedData.length;
+                let filterHtml = `
+                    <button onclick="window.filterModalBySkill('all')" 
+                        class="skill-filter-tag ${window.appState.modalQuestionsSkillFilter === 'all' ? 'active' : 'inactive'}">
+                        ทักษะทั้งหมด (${allCount})
+                    </button>
+                `;
+                uniqueSkills.forEach(s => {
+                    const sCount = allProcessedData.filter(d => d.skillName === s).length;
+                    filterHtml += `
+                        <button onclick="window.filterModalBySkill('${s}')" 
+                            class="skill-filter-tag ${window.appState.modalQuestionsSkillFilter === s ? 'active' : 'inactive'}">
+                            ${s} (${sCount})
+                        </button>
+                    `;
+                });
+                skillFilterContainer.innerHTML = filterHtml;
+            }
+
+            // กรองข้อมูลตามหมวดทักษะ
+            let filteredData = [...allProcessedData];
+            if (window.appState.modalQuestionsSkillFilter !== 'all') {
+                filteredData = filteredData.filter(d => d.skillName === window.appState.modalQuestionsSkillFilter);
+            }
+
+            // 3. Sorting logic
+            const col = window.appState.modalQuestionsSortCol;
+            const dir = window.appState.modalQuestionsSortDir === 'asc' ? 1 : -1;
+            filteredData.sort((a, b) => {
+                let valA, valB;
+                if (col.startsWith('choice_')) {
+                    const cIdx = parseInt(col.split('_')[1]);
+                    valA = a.choiceFreq[cIdx] || 0;
+                    valB = b.choiceFreq[cIdx] || 0;
+                } else {
+                    valA = a[col] || 0;
+                    valB = b[col] || 0;
+                }
+                if (typeof valA === 'string') return valA.localeCompare(valB) * dir;
+                return (valA - valB) * dir;
+            });
+
+            // 4. Render Table Header with Sort Icons for ALL columns
+            thead.innerHTML = `
+                <tr class="bg-stone-50">
+                    <th class="px-3 py-3 text-center w-12 border-r border-stone-200 sortable-header" onclick="window.handleModalQuestionsSort('idx')">
+                        ลำดับ <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-4 py-3 border-r border-stone-200 sortable-header" onclick="window.handleModalQuestionsSort('text')">
+                        ชุดข้อมูล <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleModalQuestionsSort('choice_0')">
+                        ตัวเลือก 1 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleModalQuestionsSort('choice_1')">
+                        ตัวเลือก 2 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleModalQuestionsSort('choice_2')">
+                        ตัวเลือก 3 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleModalQuestionsSort('choice_3')">
+                        ตัวเลือก 4 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center border-r border-stone-200 text-emerald-600 sortable-header" onclick="window.handleModalQuestionsSort('correctCount')">
+                        ตอบถูก <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center border-r border-stone-200 text-red-600 sortable-header" onclick="window.handleModalQuestionsSort('wrongCount')">
+                        ตอบผิด <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleModalQuestionsSort('totalAttemptCount')">
+                        รวม <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                    <th class="px-3 py-3 text-center font-black sortable-header" onclick="window.handleModalQuestionsSort('accuracy')">
+                        %ตอบถูก <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                    </th>
+                </tr>
+            `;
+
+            // 5. Render Table Body (Font normal for text)
+            tbody.innerHTML = filteredData.map(q => `
+                <tr class="hover:bg-stone-50 transition-colors">
+                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-400 font-medium">${q.idx}</td>
+                    <td class="px-4 py-3 border-r border-stone-100">
+                        <div class="font-normal text-stone-800 line-clamp-2 leading-tight">${q.text || q.question}</div>
+                        <div class="mt-1"><span class="px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded uppercase tracking-wider">${q.skillName}</span></div>
+                    </td>
+                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 1 ? 'bg-emerald-100' : ''}">${q.choiceFreq[0]}</td>
+                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 2 ? 'bg-emerald-100' : ''}">${q.choiceFreq[1]}</td>
+                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 3 ? 'bg-emerald-100' : ''}">${q.choiceFreq[2]}</td>
+                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 4 ? 'bg-emerald-100' : ''}">${q.choiceFreq[3]}</td>
+                    <td class="px-3 py-3 text-center border-r border-stone-100 font-bold text-emerald-600">${q.correctCount}</td>
+                    <td class="px-3 py-3 text-center border-r border-stone-100 font-bold text-red-500">${q.wrongCount}</td>
+                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-600 font-medium">${q.totalAttemptCount}</td>
+                    <td class="px-3 py-3 text-center font-black ${q.accuracy >= 70 ? 'text-emerald-600' : q.accuracy >= 50 ? 'text-orange-500' : 'text-red-600'}">${q.accuracy}%</td>
+                </tr>
+            `).join('');
+            
+            lucide.createIcons();
+        };
+
+        window.filterModalBySkill = (skill) => {
+            window.appState.modalQuestionsSkillFilter = skill;
+            renderModalQuestionsTable();
+        };
+
+        window.handleModalQuestionsSort = (col) => {
+            if (window.appState.modalQuestionsSortCol === col) {
+                window.appState.modalQuestionsSortDir = window.appState.modalQuestionsSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                window.appState.modalQuestionsSortCol = col;
+                window.appState.modalQuestionsSortDir = 'asc';
+            }
+            renderModalQuestionsTable();
+        };
+
+        window.updateIndividualUI = () => {
+            const tbody = document.getElementById('table-individual-body');
+            if (!tbody) return;
+            const data = window.getProcessedIndividualData();
+            document.getElementById('individual-total-count').innerText = data.length;
+
+            const totalItems = data.length;
+            const startIdx = (window.appState.individualCurrentPage - 1) * window.appState.individualPerPage;
+            const pagedData = data.slice(startIdx, startIdx + window.appState.individualPerPage);
+
+            tbody.innerHTML = pagedData.map((row, i) => `
+                <tr class="hover:bg-stone-50 transition-colors">
+                    <td class="px-4 py-3 text-center text-stone-400">${startIdx + i + 1}</td>
+                    <td class="px-4 py-3 font-medium text-[#0056ff]">${row.empId}</td>
+                    <td class="px-4 py-3 font-bold text-stone-700">${row.name}</td>
+                    <td class="px-4 py-3 text-center">${row.totalSets}</td>
+                    <td class="px-4 py-3 text-center text-emerald-600">${row.correct}</td>
+                    <td class="px-4 py-3 text-center text-red-500">${row.wrong}</td>
+                    <td class="px-4 py-3 text-center font-bold">${row.accuracy}%</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="px-2 py-1 rounded-lg ${row.passedSets >= row.totalSets ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'} text-[10px] font-bold">
+                            ผ่าน ${row.passedSets}/${row.totalSets}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="window.openIndividualDetail('${row.empId}')" class="text-blue-600 hover:underline text-xs font-bold">ดูรายละเอียด</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('individual-page-info').innerText = `แสดงรายการที่ ${totalItems === 0 ? 0 : startIdx + 1}-${Math.min(startIdx + window.appState.individualPerPage, totalItems)} จาก ${totalItems} รายการ`;
+        };
+
+        // ฟังก์ชันใหม่สำหรับจัดการ Filter และ Sort ใน Modal รายบุคคล
+        window.filterIndModalBySkill = (skill) => {
+            window.appState.indModalQuestionsSkillFilter = skill;
+            window.renderIndModalQuestionsList();
+        };
+
+        window.handleIndModalSort = (col) => {
+            if (window.appState.indModalQuestionsSortCol === col) {
+                window.appState.indModalQuestionsSortDir = window.appState.indModalQuestionsSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                window.appState.indModalQuestionsSortCol = col;
+                window.appState.indModalQuestionsSortDir = 'asc';
+            }
+            window.renderIndModalQuestionsList();
+        };
+
+        window.renderIndModalQuestionsList = () => {
+            const empId = window.appState.currentIndEmpId;
+            const setId = document.getElementById('results-set-select')?.value;
+            const container = document.getElementById('ind-modal-questions-list-area');
+            if (!container || !setId || !empId) return;
+
+            const setQuestions = window.appState.questions.filter(q => String(q.setId || q.quizId || "") === String(setId));
+            const allResults = window.appState.quizresults.filter(r => String(r.setId || r.quizId || "") === String(setId));
+            const indResults = allResults.filter(r => String(r.memberId || r.userId) === String(empId));
+
+            // ประมวลผลข้อมูลรายข้อสำหรับพนักงานคนนี้
+            let data = setQuestions.map((q, idx) => {
+                let qCorrect = 0, qTotal = 0;
+                const choiceFreq = [0, 0, 0, 0];
+                indResults.forEach(res => {
+                    const details = Array.isArray(res.details) ? res.details : Object.values(res.details || {});
+                    const d = details.find(det => String(det.questionId) === String(q.id));
+                    if (d) {
+                        qTotal++;
+                        if (d.isCorrect) qCorrect++;
+                        if (typeof d.originalOptionIndex === 'number' && d.originalOptionIndex >= 0 && d.originalOptionIndex <= 3) {
+                            choiceFreq[d.originalOptionIndex]++;
+                        }
+                    }
+                });
+                const cat = window.appState.spiderCategories.find(c => String(c.id) === String(q.spiderCatId));
+                const skillName = cat ? cat.name : 'ทั่วไป';
+                return {
+                    ...q,
+                    idx: idx + 1,
+                    skillName,
+                    qCorrect,
+                    qTotal,
+                    accuracy: qTotal > 0 ? Math.round((qCorrect / qTotal) * 100) : 0,
+                    choiceFreq
+                };
+            });
+
+            // 1. Render Skill Filter Pills
+            const filterContainer = document.getElementById('ind-modal-skill-filter-row');
+            if (filterContainer) {
+                const uniqueSkills = [...new Set(data.map(d => d.skillName))];
+                let filterHtml = `
+                    <button onclick="window.filterIndModalBySkill('all')" 
+                        class="skill-filter-tag ${window.appState.indModalQuestionsSkillFilter === 'all' ? 'active' : 'inactive'}">
+                        ทักษะทั้งหมด (${data.length})
+                    </button>
+                `;
+                uniqueSkills.forEach(s => {
+                    const sCount = data.filter(d => d.skillName === s).length;
+                    filterHtml += `
+                        <button onclick="window.filterIndModalBySkill('${s}')" 
+                            class="skill-filter-tag ${window.appState.indModalQuestionsSkillFilter === s ? 'active' : 'inactive'}">
+                            ${s} (${sCount})
+                        </button>
+                    `;
+                });
+                filterContainer.innerHTML = filterHtml;
+            }
+
+            // กรองข้อมูล
+            if (window.appState.indModalQuestionsSkillFilter !== 'all') {
+                data = data.filter(d => d.skillName === window.appState.indModalQuestionsSkillFilter);
+            }
+
+            // เรียงลำดับข้อมูล
+            const col = window.appState.indModalQuestionsSortCol;
+            const dir = window.appState.indModalQuestionsSortDir === 'asc' ? 1 : -1;
+            data.sort((a, b) => {
+                let vA, vB;
+                if (col.startsWith('choice_')) {
+                    const cIdx = parseInt(col.split('_')[1]);
+                    vA = a.choiceFreq[cIdx] || 0;
+                    vB = b.choiceFreq[cIdx] || 0;
+                } else {
+                    vA = a[col] || 0;
+                    vB = b[col] || 0;
+                }
+                if (typeof vA === 'string') return vA.localeCompare(vB) * dir;
+                return (vA - vB) * dir;
+            });
+
+            // 2. Render Table
+            container.innerHTML = `
+                <div class="rounded-table-container bg-white border border-stone-200 overflow-x-auto shadow-sm">
+                    <table class="w-full text-left min-w-[1200px]">
+                        <thead class="sticky top-0 z-10">
+                            <tr class="bg-stone-50">
+                                <th class="px-3 py-3 text-center w-12 border-r border-stone-200 sortable-header" onclick="window.handleIndModalSort('idx')">
+                                    ลำดับ <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-4 py-3 border-r border-stone-200 sortable-header" onclick="window.handleIndModalSort('text')">
+                                    ชุดข้อมูล (ทักษะ) <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleIndModalSort('choice_0')">
+                                    ตัวเลือก 1 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleIndModalSort('choice_1')">
+                                    ตัวเลือก 2 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleIndModalSort('choice_2')">
+                                    ตัวเลือก 3 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleIndModalSort('choice_3')">
+                                    ตัวเลือก 4 <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center border-r border-stone-200 text-emerald-600 sortable-header" onclick="window.handleIndModalSort('qCorrect')">
+                                    ตอบถูก <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center border-r border-stone-200 text-red-600 sortable-header" onclick="window.handleIndModalSort('qTotal')">
+                                    ตอบผิด <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center border-r border-stone-200 sortable-header" onclick="window.handleIndModalSort('qTotal')">
+                                    รวม <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                                <th class="px-3 py-3 text-center font-black sortable-header" onclick="window.handleIndModalSort('accuracy')">
+                                    %ตอบถูก <i data-lucide="arrow-up-down" class="w-3 h-3 inline"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-stone-100 text-[13px]">
+                            ${data.map(q => `
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-400 font-medium">${q.idx}</td>
+                                    <td class="px-4 py-3 border-r border-stone-100">
+                                        <div class="font-normal text-stone-800 line-clamp-2 leading-tight">${q.text || q.question}</div>
+                                        <div class="mt-1"><span class="px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded uppercase tracking-wider">${q.skillName}</span></div>
+                                    </td>
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 1 ? 'bg-emerald-100' : ''}">${q.choiceFreq[0]}</td>
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 2 ? 'bg-emerald-100' : ''}">${q.choiceFreq[1]}</td>
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 3 ? 'bg-emerald-100' : ''}">${q.choiceFreq[2]}</td>
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-500 text-[12px] ${q.correctAnswer == 4 ? 'bg-emerald-100' : ''}">${q.choiceFreq[3]}</td>
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 font-bold text-emerald-600">${q.qCorrect}</td>
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 font-bold text-red-500">${q.qTotal - q.qCorrect}</td>
+                                    <td class="px-3 py-3 text-center border-r border-stone-100 text-stone-600 font-medium">${q.qTotal}</td>
+                                    <td class="px-3 py-3 text-center font-black ${q.accuracy >= 70 ? 'text-emerald-600' : q.accuracy >= 50 ? 'text-orange-500' : 'text-red-600'}">${q.accuracy}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            lucide.createIcons();
+        };
+
+        window.openResultsDetail = (empId, name) => {
+            const setId = document.getElementById('results-set-select')?.value;
+            if (!setId) return;
+
+            window.appState.currentIndEmpId = empId;
+            window.appState.currentIndName = name;
+            window.appState.indModalQuestionsSkillFilter = 'all'; // รีเซ็ตฟิลเตอร์เมื่อเปิดใหม่
+
+            const currentSet = window.appState.questionSets.find(s => s.id === setId);
+            const setQuestions = window.appState.questions.filter(q => String(q.setId || q.quizId || "") === String(setId));
+            const allQuizResults = window.appState.quizresults.filter(r => String(r.setId || r.quizId || "") === String(setId));
+            const individualResults = allQuizResults.filter(r => String(r.memberId || r.userId) === String(empId));
+
+            let totalCorrect = 0;
+            let totalAttempt = 0;
+            let totalTimeUsed = 0;
+            const overallPassThreshold = currentSet?.passTest || 60;
+            
+            individualResults.forEach(r => {
+                totalCorrect += Number(r.score || 0);
+                totalAttempt += Number(r.totalQuestions || r.total || 0);
+                totalTimeUsed += Number(r.timeUsed || r.usedTime || 0);
+            });
+
+            const accuracy = totalAttempt > 0 ? Math.round((totalCorrect / totalAttempt) * 100) : 0;
+            const avgTime = individualResults.length > 0 ? (totalTimeUsed / individualResults.length) : 0;
+            const isPassed = accuracy >= overallPassThreshold;
+
+            const skillIds = [...new Set(setQuestions.map(q => q.spiderCatId))].filter(id => id);
+            const skills = skillIds.map(id => {
+                const cat = window.appState.spiderCategories.find(c => String(c.id) === String(id));
+                return { id, name: cat ? cat.name : 'ทั่วไป', target: cat?.targetscore || overallPassThreshold };
+            });
+
+            skills.sort((a, b) => (a.name === 'จรรยาบรรณ' ? -1 : b.name === 'จรรยาบรรณ' ? 1 : 0));
+
+            const allUsersScatter = allQuizResults.map(r => {
+                let xVal = Number(r.timeUsed || r.usedTime || 0);
+                if (xVal === 0) xVal = Math.floor(Math.random() * (900 - 100 + 1) + 100);
+                const qTotal = Number(r.totalQuestions || r.total || 1);
+                const yVal = (Number(r.score || 0) / qTotal) * 18; 
+                return { x: xVal, y: yVal };
+            });
+
+            const currentUserX = avgTime > 0 ? avgTime : Math.floor(Math.random() * (900 - 100 + 1) + 100);
+            const currentUserY = (totalCorrect / (totalAttempt || 1)) * 18;
+
+            const indSkillScores = skills.map(s => {
+                let trueC = 0, totalC = 0;
+                individualResults.forEach(res => {
+                    const details = Array.isArray(res.details) ? res.details : Object.values(res.details || {});
+                    details.forEach(item => {
+                        if (String(item.skillId) === String(s.id)) {
+                            if (item.isCorrect) trueC++;
+                            totalC++;
+                        }
+                    });
+                });
+                return totalC > 0 ? Math.round((trueC / totalC) * 100) : 0;
+            });
+
+            const avgSkillScores = skills.map(s => {
+                let trueC = 0, totalC = 0;
+                allQuizResults.forEach(res => {
+                    const details = Array.isArray(res.details) ? res.details : Object.values(res.details || {});
+                    details.forEach(item => {
+                        if (String(item.skillId) === String(s.id)) {
+                            if (item.isCorrect) trueC++;
+                            totalC++;
+                        }
+                    });
+                });
+                return totalC > 0 ? Math.round((trueC / totalC) * 100) : 0;
+            });
+
+            const modalContent = document.getElementById('modal-results-content');
+            
+            modalContent.innerHTML = `
+                <div class="space-y-8 pb-12">
+                    <!-- 8 Stats Boxes Section -->
+                    <div class="grid grid-cols-2 md:grid-cols-8 gap-4">
+                        <div class="bg-orange-100 p-4 rounded-2xl border border-orange-200 text-center shadow-sm">
+                            <p class="text-[10px] text-orange-700 font-bold uppercase mb-1">ผลประเมิน</p>
+                            <h4 class="text-xl font-bold ${isPassed ? 'text-emerald-600' : 'text-red-600'}">${isPassed ? 'ผ่านเกณฑ์' : 'ไม่ผ่าน'}</h4>
+                        </div>
+                        <div class="bg-stone-100 p-4 rounded-2xl border border-stone-200 text-center shadow-sm">
+                            <p class="text-[10px] text-stone-700 font-bold uppercase mb-1">%เกณฑ์การผ่าน</p>
+                            <h4 class="text-xl font-bold text-stone-800">${overallPassThreshold}%</h4>
+                        </div>
+                        <div class="bg-blue-100 p-4 rounded-2xl border border-blue-200 text-center shadow-sm">
+                            <p class="text-[10px] text-blue-700 font-bold uppercase mb-1">% ที่ทำได้</p>
+                            <h4 class="text-xl font-bold text-blue-800">${accuracy}%</h4>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
+                            <p class="text-[10px] text-emerald-600 font-bold uppercase mb-1">จำนวนคำถาม</p>
+                            <h4 class="text-xl font-bold text-emerald-700">${setQuestions.length}</h4>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 text-center shadow-sm">
+                            <p class="text-[10px] text-indigo-600 font-bold uppercase mb-1">ข้อที่ทำสอบ</p>
+                            <h4 class="text-xl font-bold text-indigo-700">${totalAttempt}</h4>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-2xl border border-purple-100 text-center shadow-sm">
+                            <p class="text-[10px] text-purple-600 font-bold uppercase mb-1">จำนวนตอบถูก</p>
+                            <h4 class="text-xl font-bold text-purple-700">${totalCorrect}</h4>
+                        </div>
+                        <div class="bg-rose-50 p-4 rounded-2xl border border-rose-100 text-center shadow-sm">
+                            <p class="text-[10px] text-rose-600 font-bold uppercase mb-1">จำนวนตอบผิด</p>
+                            <h4 class="text-xl font-bold text-rose-700">${totalAttempt - totalCorrect}</h4>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center shadow-sm">
+                            <p class="text-[10px] text-orange-600 font-bold uppercase mb-1">% การตอบถูก</p>
+                            <h4 class="text-xl font-bold text-orange-700">${accuracy}%</h4>
+                        </div>
+                    </div>
+
+                    <!-- Graphs Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="modal-chart-card border-slate-100 bg-white shadow-sm p-6 rounded-[2.5rem]">
+                            <p class="text-center text-[14px] font-black text-slate-400 uppercase tracking-widest mb-6">SCORE VS TIME MATRIX</p>
+                            <div class="w-full h-[320px]">
+                                <canvas id="ind-chart-scatter"></canvas>
+                            </div>
+                        </div>
+                        <div class="modal-chart-card border-slate-100 bg-white shadow-sm p-6 rounded-[2.5rem]">
+                            <p class="text-[12px] font-bold text-slate-400 uppercase mb-6 text-center">Your Skill Performance (%)</p>
+                            <div class="w-full h-[320px]">
+                                <canvas id="ind-chart-bar"></canvas>
+                            </div>
+                        </div>
+                        <div class="modal-chart-card border-slate-100 bg-white shadow-sm p-6 rounded-[2.5rem]">
+                            <p class="text-[12px] font-bold text-slate-400 uppercase mb-6 text-center">Skill Analysis vs Average</p>
+                            <div class="w-full h-[320px]">
+                                <canvas id="ind-chart-radar"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skill Cards with Conditional Styling -->
+                    <div class="space-y-4">
+                         <h4 class="font-bold text-stone-700 flex items-center gap-2">
+                            <i data-lucide="layout" class="w-5 h-5 text-blue-600"></i> สรุปรายทักษะ (Progress)
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            ${skills.map((s, idx) => {
+                                const skillAcc = indSkillScores[idx];
+                                const isSkillPassed = skillAcc >= s.target;
+                                const cardBg = isSkillPassed ? 'bg-emerald-50' : 'bg-red-50';
+                                const cardBorder = isSkillPassed ? 'border-emerald-200' : 'border-red-200';
+                                const skillTextColor = isSkillPassed ? 'text-emerald-700' : 'text-red-800';
+                                const progressBarColor = isSkillPassed ? 'bg-emerald-500' : 'bg-red-500';
+                                const labelColor = isSkillPassed ? 'text-emerald-600' : 'text-red-600';
+
+                                return `
+                                    <div class="skill-detail-card ${cardBg} border ${cardBorder}">
+                                        <h5 class="text-[12px] font-bold ${skillTextColor} uppercase text-center mb-4">${s.name}</h5>
+                                        <div class="relative w-32 h-32 mb-4">
+                                            <canvas id="skill-doughnut-${idx}"></canvas>
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <span class="text-xl font-bold ${skillTextColor}">${skillAcc}%</span>
+                                            </div>
+                                        </div>
+                                        <div class="w-full space-y-1">
+                                            <div class="flex justify-between text-[10px] font-bold ${labelColor}">
+                                                <span>% ที่ทำได้ ${skillAcc}%</span>
+                                                <span>% ยังขาดอีก ${Math.max(0, 100 - skillAcc)}%</span>
+                                            </div>
+                                            <div class="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
+                                                <div class="h-full ${progressBarColor}" style="width: ${skillAcc}%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 text-[10px] font-bold ${isSkillPassed ? 'text-emerald-400' : 'text-red-400'} uppercase">เกณฑ์ที่กำหนด: ${s.target}%</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Detailed Questions List Section (Redesigned with Filter) -->
+                    <div class="space-y-4">
+                        <h4 class="font-bold text-stone-700 flex items-center gap-2">
+                            <i data-lucide="list" class="w-5 h-5 text-blue-600"></i> รายละเอียดคำถามรายข้อ
+                        </h4>
+                        
+                        <!-- New Skill Summary Filter Row (image_2bc91f.png style) -->
+                        <div class="p-5 bg-white rounded-[2rem] border border-stone-100 shadow-sm space-y-4">
+                            <div class="text-[12px] font-bold text-stone-400 uppercase tracking-widest">ทักษะทั้งหมด:</div>
+                            <div id="ind-modal-skill-filter-row" class="flex flex-wrap gap-3"></div>
+                        </div>
+
+                        <div id="ind-modal-questions-list-area">
+                            <!-- Table will be rendered here dynamically -->
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-results-full-title').innerText = `สรุปผลการสอบรายทักษะ : ${name} (${empId})`;
+            document.getElementById('results-individual-modal').classList.remove('hidden');
+
+            // Render interactive list and table
+            window.renderIndModalQuestionsList();
+
+            /* Render Charts */
+            new Chart(document.getElementById('ind-chart-scatter'), {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'พนักงานทั้งหมด', data: allUsersScatter, backgroundColor: 'rgba(16, 185, 129, 0.4)', borderColor: 'rgb(16, 185, 129)', borderWidth: 1, pointRadius: 5 },
+                        { label: 'คุณ', data: [{ x: currentUserX, y: currentUserY }], backgroundColor: '#0056ff', borderColor: 'white', borderWidth: 2, pointRadius: 10 }
+                    ]
+                },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { min: 100, title: { display: true, text: 'แกน X: เวลาเฉลี่ย (s) | แกน Y: คะแนน' } }, 
+                        y: { beginAtZero: true, max: 18 } 
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('ind-chart-bar'), {
+                type: 'bar',
+                plugins: [ChartDataLabels],
+                data: {
+                    labels: skills.map(s => s.name),
+                    datasets: [
+                        { 
+                            label: 'คุณ', 
+                            data: indSkillScores, 
+                            backgroundColor: indSkillScores.map((score, idx) => score >= skills[idx].target ? '#10b981' : '#f87171'),
+                            barThickness: 15, 
+                            datalabels: { 
+                                anchor: 'start', 
+                                align: 'end', 
+                                offset: 4, 
+                                color: '#fff', 
+                                font: { weight: 'bold' }, 
+                                formatter: (v) => v + '%' 
+                            } 
+                        },
+                        { 
+                            label: 'ค่าเฉลี่ย', 
+                            data: avgSkillScores, 
+                            backgroundColor: '#ffffff',
+                            borderColor: '#cbd5e1',
+                            borderWidth: 1,
+                            barThickness: 15 
+                        }
+                    ]
+                },
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        x: { beginAtZero: true, max: 100 } 
+                    } 
+                }
+            });
+
+            new Chart(document.getElementById('ind-chart-radar'), {
+                type: 'radar',
+                data: {
+                    labels: skills.map(s => s.name),
+                    datasets: [
+                        { label: 'คุณ', data: indSkillScores, borderColor: '#0056ff', backgroundColor: 'rgba(0, 86, 255, 0.1)', borderWidth: 2 },
+                        { label: 'ค่าเฉลี่ย', data: avgSkillScores, borderColor: '#94a3b8', borderDash: [5, 5] }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100 } } }
+            });
+
+            skills.forEach((s, idx) => {
+                const skillAcc = indSkillScores[idx];
+                const isSkillPassed = skillAcc >= s.target;
+                const chartColor = isSkillPassed ? '#10b981' : '#f87171'; 
+
+                new Chart(document.getElementById(`skill-doughnut-${idx}`), {
+                    type: 'doughnut',
+                    data: { 
+                        datasets: [{ 
+                            data: [skillAcc, Math.max(0, 100 - skillAcc)], 
+                            backgroundColor: [chartColor, '#ffffff'],
+                            borderWidth: 0 
+                        }] 
+                    },
+                    options: { cutout: '80%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            });
+
+            lucide.createIcons();
+        };
+
+        window.closeResultsDetail = () => {
+            document.getElementById('results-individual-modal').classList.add('hidden');
+        };
+
+        window.jumpToResultsPage = (p) => {
+            window.appState.resultsCurrentPage = p;
+            window.updateResultsUI();
+        };
+
+        window.handleResultsSearch = () => {
+            window.appState.resultsSearchQuery = document.getElementById('results-search-input').value;
+            window.appState.resultsCurrentPage = 1;
+            window.updateResultsUI();
+        };
+
+        window.handleResultsSort = (col) => {
+            if (window.appState.resultsSortCol === col) {
+                window.appState.resultsSortDir = window.appState.resultsSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                window.appState.resultsSortCol = col;
+                window.appState.resultsSortDir = 'asc';
+            }
+            window.updateResultsUI();
+        };
+
+        window.handleDownloadResultsExcel = () => {
+            const setId = document.getElementById('results-set-select')?.value;
+            if (!setId) return;
+
+            const currentSet = window.appState.questionSets.find(s => s.id === setId);
+            const setQuestions = window.appState.questions.filter(q => q.setId === setId || q.quizId === setId);
+            const setResults = window.appState.quizresults.filter(r => r.setId === setId || r.quizId === setId);
+            
+            const skillIds = [...new Set(setQuestions.map(q => q.spiderCatId))].filter(id => id);
+            let skills = skillIds.map(id => {
+                const cat = window.appState.spiderCategories.find(c => String(c.id) === String(id));
+                return { id, name: cat ? cat.name : 'ทั่วไป', target: cat?.targetscore || currentSet?.passTest || 60 };
+            });
+            skills.sort((a, b) => (a.name === 'จรรยาบรรณ' ? -1 : b.name === 'จรรยาบรรณ' ? 1 : 0));
+
+            const overallPassThreshold = currentSet?.passTest || 60;
+            const memberMap = new Map();
+            setResults.forEach(r => memberMap.set(String(r.memberId || r.userId), r.memberName || r.userName || "ไม่พบชื่อ"));
+
+            let data = Array.from(memberMap.entries()).map(([empId, memberName]) => {
+                const userRes = setResults.filter(r => String(r.memberId || r.userId) === empId);
+                let r2True = 0, r2Total = 0, r1Acc = 0, r1Status = 'F', r2Status = 'F';
+                
+                const skillRes = skills.map(s => {
+                    let t = 0, f = 0;
+                    userRes.forEach(res => {
+                        const dets = Array.isArray(res.details) ? res.details : Object.values(res.details || {});
+                        dets.forEach(d => { if(String(d.skillId) === String(s.id)) { d.isCorrect ? t++ : f++; } });
+                    });
+                    const acc = (t+f) > 0 ? Math.round((t/(t+f))*100) : null;
+                    if(s.name === 'จรรยาบรรณ') { r1Acc = acc || 0; if(acc >= s.target) r1Status = 'P'; }
+                    else { r2True += t; r2Total += (t+f); }
+                    return { acc, target: s.target };
+                });
+
+                const r2Acc = r2Total > 0 ? Math.round((r2True/r2Total)*100) : 0;
+                if(r2Acc >= overallPassThreshold) r2Status = 'P';
+
+                return { empId, name: memberName, skillRes, r1Acc, r2Acc, r1Status, r2Status, finalStatus: (r1Status === 'P' && r2Status === 'P') ? 'ผ่าน' : 'ไม่ผ่าน' };
+            });
+
+            if (window.appState.resultsSearchQuery) {
+                const q = window.appState.resultsSearchQuery.toLowerCase();
+                data = data.filter(d => d.empId.toLowerCase().includes(q) || d.name.toLowerCase().includes(q));
+            }
+
+            const col = window.appState.resultsSortCol;
+            const dir = window.appState.resultsSortDir === 'asc' ? 1 : -1;
+            data.sort((a, b) => {
+                let vA, vB;
+                if (col.startsWith('skill_')) {
+                    const idx = parseInt(col.split('_')[1]);
+                    vA = a.skillRes[idx].acc ?? -1;
+                    vB = b.skillRes[idx].acc ?? -1;
+                } else {
+                    vA = a[col];
+                    vB = b[col];
+                }
+                if (typeof vA === 'string') return vA.localeCompare(vB, 'th') * dir;
+                return (vA - vB) * dir;
+            });
+
+            // สร้างโครงสร้างไฟล์ Excel แบบ XML/HTML เพื่อให้เปิดใน Excel ได้สมบูรณ์
+            let excelContent = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Results</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>
+                <body>
+                <table border="1">
+                    <tr style="background-color: #e2e8f0; font-weight: bold;">
+                        <td>ลำดับ</td><td>รหัส</td><td>ชื่อ-นามสกุล</td>
+                        ${skills.map(s => `<td>${s.name}</td>`).join('')}
+                        <td>ผลสอบ 1</td><td>ผลสอบ 2</td><td>สรุปผล</td>
+                    </tr>
+                    ${data.map((row, i) => `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td>'${row.empId}</td>
+                            <td>${row.name}</td>
+                            ${row.skillRes.map(sk => `<td>${sk.acc !== null ? sk.acc + '%' : '-'}</td>`).join('')}
+                            <td>${row.r1Acc}%</td>
+                            <td>${row.r2Acc}%</td>
+                            <td>${row.finalStatus}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Skill_Results_${currentSet?.title || setId}.xls`;
+            link.click();
+        };
+
+        window.updateResultsUI = () => {
+            const setId = document.getElementById('results-set-select')?.value;
+            const thead = document.getElementById('table-results-head');
+            const tbody = document.getElementById('table-results-body');
+            if (!setId || !tbody || !thead) return;
+
+            const currentSet = window.appState.questionSets.find(s => s.id === setId);
+            const setQuestions = window.appState.questions.filter(q => q.setId === setId || q.quizId === setId);
+            const setResults = window.appState.quizresults.filter(r => r.setId === setId || r.quizId === setId);
+            
+            const skillIds = [...new Set(setQuestions.map(q => q.spiderCatId))].filter(id => id);
+            let skills = skillIds.map(id => {
+                const cat = window.appState.spiderCategories.find(c => String(c.id) === String(id));
+                return { id, name: cat ? cat.name : 'ทั่วไป', target: cat?.targetscore || currentSet?.passTest || 60 };
+            });
+
+            skills.sort((a, b) => (a.name === 'จรรยาบรรณ' ? -1 : b.name === 'จรรยาบรรณ' ? 1 : 0));
+
+            const overallPassThreshold = currentSet?.passTest || 60;
+            document.getElementById('res-stat-pass-rate').innerText = overallPassThreshold + '%';
+            document.getElementById('res-stat-users').innerText = [...new Set(setResults.map(r => r.memberId || r.userId))].length;
+
+            thead.innerHTML = `
+                <tr class="bg-stone-100">
+                    <th class="px-4 py-3 text-center w-12 border-r border-stone-200">#</th>
+                    <th class="px-4 py-3 border-r border-stone-200 sortable-header" onclick="window.handleResultsSort('empId')">รหัส <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i></th>
+                    <th class="px-4 py-3 border-r border-stone-200 min-w-[180px] sortable-header" onclick="window.handleResultsSort('name')">ชื่อ-นามสกุล <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i></th>
+                    ${skills.map((s, idx) => `<th class="px-4 py-2 text-center border-r border-stone-200 bg-stone-50 sortable-header" onclick="window.handleResultsSort('skill_${idx}')"><div class="text-[11px] text-stone-500 font-medium">${s.name}</div><div class="text-[10px] text-orange-600 font-bold mt-1">เกณฑ์: ${s.target}% <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i></div></th>`).join('')}
+                    <th class="px-4 py-2 text-center bg-orange-100 text-orange-800 border-r border-orange-200 min-w-[80px] sortable-header" onclick="window.handleResultsSort('r1Acc')">ผลสอบ 1 <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i></th>
+                    <th class="px-4 py-2 text-center bg-emerald-100 text-emerald-800 border-r border-stone-200 min-w-[80px] sortable-header" onclick="window.handleResultsSort('r2Acc')">ผลสอบ 2 <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i></th>
+                    <th class="px-4 py-2 text-center bg-blue-600 text-white sortable-header" onclick="window.handleResultsSort('finalStatus')">สรุปผล <i data-lucide="arrow-up-down" class="w-3 h-3 inline ml-1"></i></th>
+                </tr>
+            `;
+
+            const memberMap = new Map();
+            setResults.forEach(r => memberMap.set(String(r.memberId || r.userId), r.memberName || r.userName || "ไม่พบชื่อ"));
+
+            let data = Array.from(memberMap.entries()).map(([empId, memberName]) => {
+                const userRes = setResults.filter(r => String(r.memberId || r.userId) === empId);
+                let r2True = 0, r2Total = 0, r1Acc = 0, r1Status = 'F', r2Status = 'F';
+                
+                const skillRes = skills.map(s => {
+                    let t = 0, f = 0;
+                    userRes.forEach(res => {
+                        const dets = Array.isArray(res.details) ? res.details : Object.values(res.details || {});
+                        dets.forEach(d => { if(String(d.skillId) === String(s.id)) { d.isCorrect ? t++ : f++; } });
+                    });
+                    const acc = (t+f) > 0 ? Math.round((t/(t+f))*100) : null;
+                    if(s.name === 'จรรยาบรรณ') { r1Acc = acc || 0; if(acc >= s.target) r1Status = 'P'; }
+                    else { r2True += t; r2Total += (t+f); }
+                    return { acc, target: s.target };
+                });
+
+                const r2Acc = r2Total > 0 ? Math.round((r2True/r2Total)*100) : 0;
+                if(r2Acc >= overallPassThreshold) r2Status = 'P';
+
+                return { empId, name: memberName, skillRes, r1Acc, r2Acc, r1Status, r2Status, finalStatus: (r1Status === 'P' && r2Status === 'P') ? 'ผ่าน' : 'ไม่ผ่าน' };
+            });
+
+            if (window.appState.resultsSearchQuery) {
+                const q = window.appState.resultsSearchQuery.toLowerCase();
+                data = data.filter(d => d.empId.toLowerCase().includes(q) || d.name.toLowerCase().includes(q));
+            }
+
+            const col = window.appState.resultsSortCol;
+            const dir = window.appState.resultsSortDir === 'asc' ? 1 : -1;
+            data.sort((a, b) => {
+                let vA, vB;
+                if (col.startsWith('skill_')) {
+                    const idx = parseInt(col.split('_')[1]);
+                    vA = a.skillRes[idx].acc ?? -1;
+                    vB = b.skillRes[idx].acc ?? -1;
+                } else {
+                    vA = a[col];
+                    vB = b[col];
+                }
+                if (typeof vA === 'string') return vA.localeCompare(vB, 'th') * dir;
+                return (vA - vB) * dir;
+            });
+
+            const totalItems = data.length;
+            const startIdx = (window.appState.resultsCurrentPage - 1) * window.appState.resultsPerPage;
+            const pagedData = data.slice(startIdx, startIdx + window.appState.resultsPerPage);
+
+            tbody.innerHTML = pagedData.map((row, i) => `
+                <tr class="row-hover-blue transition-colors cursor-pointer" onclick="window.openResultsDetail('${row.empId}', '${row.name.replace(/'/g, "\\'")}')">
+                    <td class="px-4 py-3 text-center text-stone-400 border-r border-stone-100">${startIdx + i + 1}</td>
+                    <td class="px-4 py-3 text-[#0056ff] font-medium border-r border-stone-100">${row.empId}</td>
+                    <td class="px-4 py-3 text-stone-700 font-bold border-r border-stone-100">${row.name}</td>
+                    ${row.skillRes.map(sk => `<td class="px-2 py-3 text-center border-r border-stone-200 font-bold ${sk.acc !== null ? (sk.acc >= sk.target ? 'bg-emerald-500/15' : 'bg-red-500/15') : ''}">${sk.acc !== null ? sk.acc + '%' : '-'}</td>`).join('')}
+                    <td class="px-2 py-3 text-center border-r border-stone-100 font-bold text-white ${row.r1Status === 'P' ? 'bg-emerald-500' : 'bg-red-500'}">${row.r1Acc}%</td>
+                    <td class="px-2 py-3 text-center border-r border-stone-200 font-bold text-white ${row.r2Status === 'P' ? 'bg-emerald-500' : 'bg-red-500'}">${row.r2Acc}%</td>
+                    <td class="px-2 py-3 text-center font-bold text-white ${row.finalStatus === 'ผ่าน' ? 'bg-emerald-600' : 'bg-red-600'}">${row.finalStatus}</td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        };
+
+        window.getProcessedTrackingData = (setId) => {
+            const currentSet = window.appState.questionSets.find(s => s.id === setId);
+            if (!currentSet) return [];
+            const threshold = Number(currentSet.passTest || 60);
+            let baseEmpIds = [];
+            if (Array.isArray(currentSet.allowedEmpIds) && currentSet.allowedEmpIds.length > 0) {
+                baseEmpIds = currentSet.allowedEmpIds;
+            } else {
+                const quizUsers = window.appState.quizresults.filter(r => r.setId === setId || r.quizId === setId).map(r => String(r.memberId || r.userId));
+                const tutorUsers = window.appState.tutor.filter(t => t.setId === setId || t.quizId === setId).map(t => String(t.memberId || t.empId));
+                baseEmpIds = [...new Set([...quizUsers, ...tutorUsers])];
+            }
+            let mappedData = baseEmpIds.map(empId => {
+                const member = window.appState.members.find(m => String(m.empId) === String(empId));
+                const userQuizResults = window.appState.quizresults.filter(r => String(r.memberId || r.userId) === String(empId) && (r.setId === setId || r.quizId === setId));
+                const latestTest = userQuizResults.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))[0];
+                const userTutorResults = window.appState.tutor.filter(t => String(t.memberId || t.empId) === String(empId) && (t.setId === setId || t.quizId === setId));
+                const latestTutor = userTutorResults.sort((a,b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))[0];
+                const tScore = latestTest ? Number(latestTest.score || 0) : 0;
+                const tTotal = latestTest ? Number(latestTest.totalQuestions || latestTest.total || 1) : 0;
+                const tAcc = latestTest ? Math.round((tScore / tTotal) * 100) : -1;
+                const trScore = latestTutor ? Number(latestTutor.score || 0) : 0;
+                const trTotal = latestTutor ? Number(latestTutor.totalQuestions || latestTutor.total || 1) : 0;
+                const trAcc = latestTutor ? Math.round((trScore / trTotal) * 100) : -1;
+                let compHtml = '<span class="text-stone-300">-</span>';
+                let compText = "-";
+                if (tAcc >= 0 && trAcc >= 0) {
+                    if (tAcc > trAcc) { compHtml = `<div class="text-emerald-500 font-bold flex items-center justify-center gap-1"><i data-lucide="arrow-up" class="w-3 h-3"></i> ผลสอบ</div>`; compText = "ผลสอบ"; }
+                    else if (trAcc > tAcc) { compHtml = `<div class="text-red-500 font-bold flex items-center justify-center gap-1"><i data-lucide="arrow-down" class="w-3 h-3"></i> ผลติว</div>`; compText = "ผลติว"; }
+                    else { compHtml = `<div class="text-blue-500 font-bold">เท่ากัน</div>`; compText = "เท่ากัน"; }
+                }
+                return {
+                    empId, name: member ? member.name : "ไม่พบข้อมูล", testScore: latestTest ? `${tScore}/${tTotal}` : "-",
+                    testAccuracy: tAcc, isPassed: tAcc >= 0 ? (tAcc >= threshold ? 1 : 0) : -1,
+                    trainScore: latestTutor ? `${trScore}/${trTotal}` : "-", trainAccuracy: trAcc, compHtml, comparisonRaw: compText
+                };
+            });
+            if (window.appState.trackingSearchQuery) {
+                const query = window.appState.trackingSearchQuery.toLowerCase();
+                mappedData = mappedData.filter(r => r.empId.toLowerCase().includes(query) || r.name.toLowerCase().includes(query));
+            }
+            return mappedData;
+        };
+
+        window.updateTrackingUI = () => {
+            const setId = document.getElementById('tracking-set-select')?.value;
+            const tbody = document.getElementById('table-tracking-body');
+            if (!setId || !tbody) return;
+            let data = window.getProcessedTrackingData(setId);
+            const currentSet = window.appState.questionSets.find(s => s.id === setId);
+            const threshold = Number(currentSet?.passTest || 60);
+            const col = window.appState.trackingSortCol;
+            const dir = window.appState.trackingSortDir === 'asc' ? 1 : -1;
+            data.sort((a, b) => {
+                let vA = a[col], vB = b[col];
+                if (typeof vA === 'string') return vA.localeCompare(vB, 'th') * dir;
+                return (vA - vB) * dir;
+            });
+            const totalItems = data.length;
+            const totalPages = Math.ceil(totalItems / window.appState.trackingPerPage);
+            const startIdx = (window.appState.trackingCurrentPage - 1) * window.appState.trackingPerPage;
+            const pagedData = data.slice(startIdx, startIdx + window.appState.trackingPerPage);
+            tbody.innerHTML = pagedData.map((row, i) => `
+                <tr class="hover:bg-stone-50 transition-colors">
+                    <td class="px-4 py-3 text-center text-stone-400">${startIdx + i + 1}</td>
+                    <td class="px-4 py-3 text-[#0056ff]">${row.empId}</td>
+                    <td class="px-4 py-3 text-stone-700">${row.name}</td>
+                    <td class="px-4 py-3 text-center">${row.testScore}</td>
+                    <td class="px-4 py-3 text-center ${row.testAccuracy >= threshold ? 'text-emerald-600' : 'text-stone-400'}">${row.testAccuracy >= 0 ? row.testAccuracy + '%' : '-'}</td>
+                    <td class="px-4 py-3 text-center">
+                        ${row.isPassed === 1 ? '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg text-[10px] font-bold">ผ่าน</span>' : 
+                          row.isPassed === 0 ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded-lg text-[10px] font-bold">ไม่ผ่าน</span>' : '-'}
+                    </td>
+                    <td class="px-4 py-3 text-center text-stone-500">${row.trainScore}</td>
+                    <td class="px-4 py-3 text-center text-stone-500">${row.trainAccuracy >= 0 ? row.trainAccuracy + '%' : '-'}</td>
+                    <td class="px-4 py-3 text-center">${row.compHtml}</td>
+                </tr>
+            `).join('');
+            document.getElementById('tracking-page-info').innerText = `แสดงรายการที่ ${totalItems === 0 ? 0 : startIdx + 1}-${Math.min(startIdx + window.appState.trackingPerPage, totalItems)} จาก ${totalItems} รายการ`;
+            const pgCont = document.getElementById('tracking-pages-container');
+            let pgHtml = '';
+            for (let i = 1; i <= totalPages; i++) {
+                pgHtml += `<button onclick="jumpToTrackingPage(${i})" class="px-3 py-1 text-xs font-bold rounded-lg ${i === window.appState.trackingCurrentPage ? 'bg-[#0056ff] text-white shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}">${i}</button>`;
+            }
+            pgCont.innerHTML = pgHtml;
+            lucide.createIcons();
+        };
+
+        window.navigate = (sectionId) => {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+            const target = document.getElementById(`section-${sectionId}`);
+            if (target) target.classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('tab-active');
+                b.classList.add('text-slate-500', 'hover:bg-stone-200');
+            });
+            const navBtn = document.getElementById(`nav-${sectionId}`);
+            if (navBtn) navBtn.classList.add('tab-active');
+
+            if (sectionId === 'tracking') window.updateTrackingUI();
+            if (sectionId === 'individual') window.updateIndividualUI();
+            if (sectionId === 'summaryset') window.updateSummarySetUI();
+            if (sectionId === 'results') window.updateResultsUI();
+            lucide.createIcons();
+        };
+
+        const startSync = () => {
+            if (!window.appState.user || window.appState.syncStarted) return;
+            window.appState.syncStarted = true;
+            ['members', 'questionSets', 'quizresults', 'questions', 'tutor', 'spiderCategories'].forEach(colName => {
+                onSnapshot(collection(db, getPath(colName)), (snap) => {
+                    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    window.appState[colName] = docs;
+                    if (colName === 'questionSets') {
+                        updateTrackingDropdown();
+                        updateResultsDropdown();
+                    }
+                    
+                    const activeSection = document.querySelector('.content-section:not(.hidden)')?.id.replace('section-', '');
+                    if (activeSection === 'tracking') window.updateTrackingUI();
+                    if (activeSection === 'individual') window.updateIndividualUI();
+                    if (activeSection === 'summaryset') window.updateSummarySetUI();
+                    if (activeSection === 'results') window.updateResultsUI();
+                });
+            });
+        };
+
+        const updateTrackingDropdown = () => {
+            const dd = document.getElementById('tracking-set-select');
+            if (!dd) return;
+            const current = dd.value;
+            const sortedSets = [...window.appState.questionSets].sort((a, b) => (b.startDate || "").localeCompare(a.startDate || ""));
+            dd.innerHTML = '<option value="">เลือกชุดคำถาม...</option>' + sortedSets.map(s => `<option value="${s.id}" ${s.id === current ? 'selected' : ''}>${s.title}</option>`).join('');
+        };
+
+        const updateResultsDropdown = () => {
+            const dd = document.getElementById('results-set-select');
+            if (!dd) return;
+            const current = dd.value;
+            const sortedSets = [...window.appState.questionSets].sort((a, b) => (b.startDate || "").localeCompare(a.startDate || ""));
+            dd.innerHTML = '<option value="">เลือกชุดคำถาม...</option>' + sortedSets.map(s => `<option value="${s.id}" ${s.id === current ? 'selected' : ''}>${s.title}</option>`).join('');
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            window.appState.user = user;
+            if (user) {
+                document.getElementById('connection-status').innerText = "LIVE: CLOUD SYNCING";
+                document.getElementById('connection-status').className = "text-[12px] text-emerald-500 uppercase font-bold";
+                startSync();
+            }
+        });
+
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+            else await signInAnonymously(auth);
+        };
+        initAuth();
+
+        window.onload = () => { 
+            window.navigate('results'); /* ปรับเป็นค่าเริ่มต้นที่เมนูสรุปผล */
+            lucide.createIcons(); 
+        };
+    </script>
+</body>
+</html>
